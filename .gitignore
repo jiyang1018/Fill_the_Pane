@@ -1,5 +1,15 @@
-dist/
-build/
-__pycache__/
-ftp_debug.log
-*.pyc
+# Exclude everything by default
+*
+
+# Allow specific root-level files
+!.gitignore
+!README.md
+!build.bat
+!fill_the_pane.spec
+!feature list.txt
+
+# Allow code and latest folders and their contents
+!code/
+!code/**
+!latest/
+!latest/**
