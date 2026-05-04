@@ -1,7 +1,0 @@
-## appearence
-in "about this program" popup, remove "built time"
-in light mode, use black color for font_sec
-
-## behavior
-the bar under "write up to" should be 0% to 100%, but user can only slide from minimum to 90%
-the minimum should be 1GB above used space or 10%, which ever is higher
