@@ -7,6 +7,8 @@
 !build.bat
 !fill_the_pane.spec
 !feature list.md
+!.github/
+!.github/**
 
 # Allow code and latest folders and their contents
 !code/
