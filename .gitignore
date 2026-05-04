@@ -6,12 +6,10 @@
 !README.md
 !build.bat
 !fill_the_pane.spec
-!feature list.md
+!feature list.txt
 !.github/
 !.github/**
 
-# Allow code and latest folders and their contents
-!code/
-!code/**
+# Allow latest folder and its contents
 !latest/
 !latest/**
