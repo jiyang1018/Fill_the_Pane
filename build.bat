@@ -9,6 +9,12 @@ set VERSION=%EXE_NAME:Fill the Pane v=%
 set VERSION=%VERSION:.exe=%
 set PY_FILE=fill_the_pane_v%VERSION%.py
 
+:: Create code\ folder if it doesn't exist
+if not exist code mkdir code
+
+:: Copy latest .py to code\ for archiving
+copy "latest\%PY_FILE%" "code\%PY_FILE%"
+
 :: Run PyInstaller
 python -m PyInstaller fill_the_pane.spec --noconfirm
 
@@ -17,13 +23,6 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-
-:: Create latest\ folder if it doesn't exist
-if not exist latest mkdir latest
-
-:: Clear latest\ folder and copy latest .py
-del /q "latest\*" 2>nul
-copy "code\%PY_FILE%" "latest\%PY_FILE%"
 
 :: Launch the exe
 start "" "dist\%EXE_NAME%"
