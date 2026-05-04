@@ -1,0 +1,26 @@
+ Volume in drive E is Documents
+ Volume Serial Number is 54B8-51A9
+
+ Directory of E:\iBuypower\Lab\AI projects\Fill the Pane
+
+05/04/2026  03:34 PM    <DIR>          .
+05/01/2026  07:39 PM    <DIR>          ..
+05/04/2026  03:05 PM                46 .gitignore
+05/04/2026  03:20 PM    <DIR>          build
+05/04/2026  03:17 PM             1,010 build.bat
+05/03/2026  04:03 PM            10,506 build_log.txt
+05/04/2026  02:55 PM    <DIR>          changelog
+05/04/2026  02:52 PM    <DIR>          code
+05/04/2026  03:22 PM    <DIR>          dist
+05/01/2026  08:46 PM             1,183 drivetest.spec
+05/03/2026  04:22 PM             1,906 Feature List.txt
+05/04/2026  03:05 PM             1,779 fill_the_pane.spec
+05/03/2026  04:22 PM            28,531 fill_the_pane_v0.5.41.zip
+05/04/2026  03:22 PM    <DIR>          latest
+05/04/2026  03:34 PM                 0 list.txt
+05/01/2026  08:46 PM             1,187 README.md
+05/03/2026  04:08 PM                39 requirements.txt
+05/01/2026  11:14 PM    <DIR>          result
+05/04/2026  03:33 PM               215 tree.txt
+              11 File(s)         46,402 bytes
+               8 Dir(s)  1,510,204,026,880 bytes free

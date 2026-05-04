@@ -1,0 +1,12 @@
+Folder PATH listing for volume Documents
+Volume serial number is 54B8-51A9
+E:.
+©À©¤build
+©¦  ©¸©¤fill_the_pane
+©¦      ©¸©¤localpycs
+©À©¤changelog
+©À©¤code
+©À©¤dist
+©¦  ©¸©¤results
+©À©¤latest
+©¸©¤result

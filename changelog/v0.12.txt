@@ -1,0 +1,7 @@
+remove progress bar
+change graph x axis to total capacity
+light mode and dark mode do not work after relaunching app
+beside the .exe file, create an settings.ini file that stores language and theme settings. when launching .exe load settings from settings.ini if present.
+draw graph at 16:9 ratio in app
+always generate .spec and .py for each iteration
+use Segoe UI Variable as default font in windows

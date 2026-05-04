@@ -1,0 +1,18 @@
+## appearence
+in light mode, use black color for all text except warning, start and stop
+show peak speed in green, average in orange and duration in black
+when fill target exceeds free space, hight info area border in red as well
+place error message over [start test] button
+move icon from drive selection drop down to save data
+
+## feature
+remove [drive info] button
+under [save data] add [load data] button, in the next dialogue, use can load a previous csv file and app update graph and info based on this file
+remove [export] menu
+above "save graph image" 
+
+## behavior
+change language emoji to national flags
+add [About this Program] under [About], and link about popup window to this new menu item
+fill target slider bar should be 0% to 100%, but user can only slide between 10% and 90%
+

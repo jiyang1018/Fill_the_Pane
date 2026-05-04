@@ -1,0 +1,55 @@
+drivemark changelog
+v0.1
+publish to github, but set to private
+change app name to "Fill the Pane"
+change "-Sequential Write Benchmark" to  "- Sequential Write Torture Test"
+use method similar to Crystaldiskinfo, acquire storage information
+add a button [Drive Info] under [Refrese Drives], user can click this button and a pop window will display storage information
+add menu [Export] [Language] [About]
+	under [Export]
+		[Export Result as Image] export final graph as an image, in the next dialogue, user input export resolution in horizontal and vertical pixel count, save location and file format in JPG, PNG, GIF(still)
+		[Export Progress as Animation] export the entire test live result as an animation, in the next dialogue, user input export resolution in horizontal and vertical pixel count, save locaiton and file format in GIF animation or .mp4 in H265
+		[Export Report] export recorded data, in the next dialogue, user choose save location and file format in CSV, XLS or .numbers
+	
+	under [Language]
+		provide the following languages with national flags before each language name
+		English
+		Danish
+		German
+		Finnish
+		French
+		Hungarian
+		Indonesian
+		Malay
+		Dutch
+		Norwegian
+		Polish
+		Portuguese
+		Romanian
+		Russian
+		Spanish
+		Swedish
+		Turkish
+		Ukrainian
+		Vietnamese
+		Arabic
+		Chinese (Simplified)
+		Chinese (Traditional)
+		Japanese
+		Korean
+	under [About]
+		Show build data and time, verison, general public licence of a free software
+		author information and github link
+
+use AP-Style Title Case for all text elements in GUI
+add a drive icon before drive selection drop down menu
+add a refresh icon before [Refresh Drives] text on that button
+change start test to green, and stop test to red
+add an image icon before [save graph image] text on this button
+	[save graph image] behaves the same as [Export result as image] menu option
+add [save animation] button
+add a video icon before [save animation] text on this button
+change [save csv data] to [save data]
+add a spreadsheet icon before [save data] text on this button
+on "write speed over time" progress bar, display capacity progress percentage in the middle of the entire bar in white text
+in graph, when mouse over, draw a vertical line at cursor of the current position, next to cursor, display current position total write amount and percentage of full capacity

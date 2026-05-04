@@ -1,0 +1,93 @@
+155 INFO: PyInstaller: 6.20.0, contrib hooks: 2026.4
+155 INFO: Python: 3.14.4
+192 INFO: Platform: Windows-11-10.0.26200-SP0
+193 INFO: Python environment: C:\Users\jiyan\AppData\Local\Programs\Python\Python314
+207 INFO: Module search paths (PYTHONPATH):
+['E:\\iBuypower\\Lab\\AI projects\\Fill the Pane',
+ 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\python314.zip',
+ 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\DLLs',
+ 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib',
+ 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314',
+ 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages',
+ 'E:\\iBuypower\\Lab\\AI projects\\Fill the Pane']
+675 INFO: checking Analysis
+702 INFO: Building because inputs changed
+702 INFO: Looking for Python shared library...
+702 INFO: Using Python shared library: C:\Users\jiyan\AppData\Local\Programs\Python\Python314\python314.dll
+702 INFO: Running Analysis Analysis-00.toc
+702 INFO: Target bytecode optimization level: 0
+702 INFO: Initializing module dependency graph...
+703 INFO: Initializing module graph hook caches...
+714 INFO: Analyzing modules for base_library.zip ...
+2373 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+2841 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+3090 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+3099 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+4761 INFO: Caching module dependency graph...
+4783 INFO: Analyzing E:\iBuypower\Lab\AI projects\Fill the Pane\fill_the_pane_v0.5.41.py
+4868 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+4870 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+5130 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+5205 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+5233 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+5237 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+5294 INFO: Processing standard module hook 'hook-matplotlib.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+5605 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+5606 INFO: SetuptoolsInfo: initializing cached setuptools info...
+6170 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+6248 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+6737 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+6802 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+7990 INFO: Processing standard module hook 'hook-psutil.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+8829 INFO: Processing pre-safe-import-module hook 'hook-gi.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+8991 INFO: Processing standard module hook 'hook-matplotlib.backend_bases.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+9110 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+9194 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+9594 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+9727 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+10378 INFO: Processing standard module hook 'hook-matplotlib.backends.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+10449 INFO: Processing standard module hook 'hook-matplotlib.pyplot.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+11191 INFO: Processing standard module hook 'hook-dateutil.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+11256 INFO: Processing pre-safe-import-module hook 'hook-six.moves.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+12340 INFO: Analyzing hidden import 'matplotlib.animation'
+12370 INFO: Processing module hooks (post-graph stage)...
+12376 INFO: Processing standard module hook 'hook-matplotlib.backends.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+12377 INFO: Matplotlib backend selection method: automatic discovery of used backends
+12395 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'E:\\iBuypower\\Lab\\AI projects\\Fill the Pane\\fill_the_pane_v0.5.41.py': ['TkAgg']
+12395 INFO: The following Matplotlib backends were discovered by scanning for `matplotlib.use()` calls: ['TkAgg']. If your backend of choice is not in this list, either add a `matplotlib.use()` call to your code, or configure the backend collection via hook options (see: https://pyinstaller.org/en/stable/hooks-config.html#matplotlib-hooks).
+12395 INFO: Selected matplotlib backends: ['TkAgg']
+12605 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+12669 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+12678 INFO: Performing binary vs. data reclassification (1129 entries)
+12865 INFO: Looking for ctypes DLLs
+12911 INFO: Analyzing run-time hooks ...
+12914 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+12915 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+12917 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+12919 INFO: Including run-time hook 'pyi_rth_mplconfig.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+12919 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+12921 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+12928 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+12947 INFO: Creating base_library.zip...
+13182 INFO: Looking for dynamic libraries
+13941 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\jiyan\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\numpy.libs']
+13941 INFO: Extra DLL search directories (PATH): []
+14335 INFO: Warnings written to E:\iBuypower\Lab\AI projects\Fill the Pane\build\fill_the_pane\warn-fill_the_pane.txt
+14370 INFO: Graph cross-reference written to E:\iBuypower\Lab\AI projects\Fill the Pane\build\fill_the_pane\xref-fill_the_pane.html
+14402 INFO: checking PYZ
+14433 INFO: checking PKG
+14442 INFO: Building because name changed
+14442 INFO: Building PKG (CArchive) Fill the Pane v0.5.41.pkg
+17136 INFO: Building PKG (CArchive) Fill the Pane v0.5.41.pkg completed successfully.
+17151 INFO: Bootloader C:\Users\jiyan\AppData\Local\Programs\Python\Python314\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+17152 INFO: checking EXE
+17159 INFO: Rebuilding EXE-00.toc because Fill the Pane v0.5.41.exe missing
+17159 INFO: Building EXE from EXE-00.toc
+17160 INFO: Copying bootloader EXE to E:\iBuypower\Lab\AI projects\Fill the Pane\dist\Fill the Pane v0.5.41.exe
+17273 INFO: Copying icon to EXE
+17382 INFO: Copying 0 resources to EXE
+17382 INFO: Embedding manifest in EXE
+17491 INFO: Appending PKG archive to EXE
+17573 INFO: Fixing EXE headers
+22815 INFO: Building EXE from EXE-00.toc completed successfully.
+22830 INFO: Build complete! The results are available in: E:\iBuypower\Lab\AI projects\Fill the Pane\dist

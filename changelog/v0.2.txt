@@ -1,0 +1,13 @@
+## behavior
+use sequential write method similar to crystaldiskmark so these tools are comparable
+	sequential 1MB, queues=8, threads=1
+change fill_min to max(5%, used+5%)
+
+## appearance
+left adjust icons on all the "start", "stop", "save" and "load" buttons with the "save graph image" icons
+left adjust text on all the "start", "stop", "save" and "load" button with the "save graph image" text
+
+## feature
+remove .mp4 as animation option
+add "info graphics for web"
+	this option exports an interactive graph to be embedded in a webpage that has the same mouse over display as in this app

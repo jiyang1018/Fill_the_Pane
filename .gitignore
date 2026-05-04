@@ -1,0 +1,5 @@
+dist/
+build/
+__pycache__/
+ftp_debug.log
+*.pyc
