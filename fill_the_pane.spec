@@ -9,7 +9,7 @@
 block_cipher = None
 
 a = Analysis(
-    ['latest\fill_the_pane_v0.5.41.py'],
+    ['latest/fill_the_pane_v0.5.41.py'],
     pathex=[],
     binaries=[],
     datas=[],
