@@ -6,7 +6,7 @@
 !README.md
 !build.bat
 !fill_the_pane.spec
-!feature list.txt
+!feature list.md
 
 # Allow code and latest folders and their contents
 !code/
