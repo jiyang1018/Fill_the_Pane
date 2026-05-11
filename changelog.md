@@ -6,6 +6,14 @@
 
 ---
 
+## Fill the Pane v0.6.02 -- 2026-05-11
+
+- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
+- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
+- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
+
+---
+
 # Fill the Pane — Changelog
 
 ---
