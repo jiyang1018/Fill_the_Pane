@@ -78,7 +78,7 @@ python latest\fill_the_pane_v*.py
 ## Notes
 
 - Writes a temporary `_FtP_*.tmp` file to the target drive and deletes it when done or on stop.
-- Run as Administrator if testing the C: drive, as Windows may restrict writes to the system drive root.
+- The app requests Administrator privileges automatically at launch via UAC prompt — this is required for direct unbuffered I/O on some drives.
 - Random bytes are used to prevent hardware compression from skewing results.
 - Never writes more than the configured target percentage of total drive capacity.
 - The SLC cache cliff (if present) appears as a sudden speed drop partway through the test — this is expected drive behavior, not a bug.

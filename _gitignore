@@ -1,0 +1,21 @@
+# Exclude everything by default
+*
+
+# Allow specific root-level files
+!.gitignore
+!README.md
+!CHANGELOG.md
+!changelog.md
+!build.bat
+!build_dll.bat
+!prepend_changelog.py
+!release.bat
+!fill_the_pane.spec
+!ftp_loop.cpp
+!feature list.txt
+!.github/
+!.github/**
+
+# Allow latest folder and its contents
+!latest/
+!latest/**
