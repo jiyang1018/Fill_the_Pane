@@ -1,0 +1,31 @@
+# Exclude everything by default
+*
+
+# Allow specific root-level files
+!.gitignore
+!.gitattributes
+!README.md
+!CHANGELOG.md
+!changelog.md
+!build.bat
+!build_dll.bat
+!prepend_changelog.py
+!release.bat
+!fill_the_pane.spec
+!ftp_loop.cpp
+!feature list.txt
+!.github/
+!.github/**
+
+# Allow latest folder and its contents (source files only)
+!latest/
+!latest/**
+
+# Explicitly exclude build artifacts that may already be tracked
+build/
+code/
+dist/
+*.dll
+*.log
+*.txt
+*.exe
