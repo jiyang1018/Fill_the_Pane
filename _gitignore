@@ -3,6 +3,7 @@
 
 # Allow specific root-level files
 !.gitignore
+!.gitattributes
 !README.md
 !CHANGELOG.md
 !changelog.md
@@ -16,6 +17,6 @@
 !.github/
 !.github/**
 
-# Allow latest folder and its contents
+# Allow latest folder and its contents (source files only)
 !latest/
 !latest/**
