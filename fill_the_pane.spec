@@ -9,10 +9,10 @@
 block_cipher = None
 
 a = Analysis(
-    ['latest/fill_the_pane_v0.5.41.py'],
+    ['latest/fill_the_pane_v0.6.02.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('ftp_loop.dll', '.')],  # native C++ write loop; falls back to Python if absent
     hiddenimports=[
         'matplotlib.backends.backend_tkagg',
         'matplotlib.backends.backend_agg',
@@ -61,7 +61,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Fill the Pane v0.5.41',
+    name='Fill the Pane v0.6.02',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -76,4 +76,5 @@ exe = EXE(
     entitlements_file=None,
     icon=None,
     onefile=True,
+    uac_admin=True,
 )

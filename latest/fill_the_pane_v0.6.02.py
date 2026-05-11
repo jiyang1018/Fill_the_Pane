@@ -59,7 +59,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════
 APP_NAME     = "Fill the Pane"
 APP_SUBTITLE = "Sequential Write Torture Test"
-APP_VERSION  = "0.5.41"
+APP_VERSION  = "0.6.02"
 BUILD_DT     = "2025-05-01 00:00:00"
 GITHUB_URL   = "https://github.com/jiyang1018/Fill_the_Pane"
 AUTHOR       = "Yang Ji"
@@ -429,15 +429,212 @@ def get_drives():
 # ═══════════════════════════════════════════════════════════════════════════
 #  Benchmark worker  — true CDM SEQ1M Q8T1
 #  Windows: single thread, 8 outstanding OVERLAPPED async writes,
-#           FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH (unbuffered)
+#           FILE_FLAG_OVERLAPPED only (buffered — keeps I/O cancellable on all drivers)
 #           4 KB-aligned 1 MB buffers — identical to CrystalDiskMark
 #  Non-Windows fallback: sequential buffered writes, Q1T1
 # ═══════════════════════════════════════════════════════════════════════════
 
 CHUNK            = 1 * 1024 * 1024    # 1 MB per I/O request — CDM SEQ1M
-QUEUE_DEPTH      = 8                   # 8 outstanding requests — CDM Q8
+QUEUE_DEPTH      = 8                   # 8 outstanding requests — CDM Q8T1
 SECTOR_SIZE      = 4096               # alignment for NO_BUFFERING
 MEASURE_INTERVAL = 0.5
+
+
+def _write_process(tmp, tb, chunk, queue_depth, stop_flag, bytes_written, ready_flag):
+    """
+    Separate process for the hot write loop — runs without the main GIL.
+    Tries to load ftp_loop.dll (native C++ loop) first; falls back to the
+    Python implementation if the DLL is not found.
+    """
+    import ctypes, os, sys
+
+    # ── Attempt native C++ loop via ftp_loop.dll ─────────────────────────
+    # The DLL exports ftp_write_loop(path, total_bytes, chunk, queue_depth,
+    # stop_flag*, bytes_written*, ready_flag*) and handles everything
+    # internally: CreateFile, prewarm, measured loop, cleanup.
+    _dll_path = os.path.join(
+        os.path.dirname(sys.executable if getattr(sys, "frozen", False) else __file__),
+        "ftp_loop.dll"
+    )
+    try:
+        _dll = ctypes.CDLL(_dll_path)
+        _dll.ftp_write_loop.restype  = ctypes.c_int
+        _dll.ftp_write_loop.argtypes = [
+            ctypes.c_wchar_p,           # path
+            ctypes.c_int64,             # total_bytes
+            ctypes.c_int32,             # chunk
+            ctypes.c_int32,             # queue_depth
+            ctypes.c_void_p,            # stop_flag*
+            ctypes.c_void_p,            # bytes_written*
+            ctypes.c_void_p,            # ready_flag*
+        ]
+        _dll.ftp_write_loop(
+            tmp, tb, chunk, queue_depth,
+            ctypes.addressof(stop_flag.get_obj()),
+            ctypes.addressof(bytes_written.get_obj()),
+            ctypes.addressof(ready_flag.get_obj()),
+        )
+        return  # DLL handled everything
+    except Exception:
+        pass  # DLL not found or failed — fall through to Python loop
+    # ── Python fallback loop ─────────────────────────────────────────────
+    import ctypes
+    import ctypes.wintypes as wt
+    import os
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+    GENERIC_WRITE           = 0x40000000
+    FILE_SHARE_READ         = 0x00000001
+    CREATE_ALWAYS           = 2
+    FILE_FLAG_NO_BUFFERING  = 0x20000000
+    FILE_FLAG_WRITE_THROUGH = 0x80000000
+    FILE_FLAG_OVERLAPPED    = 0x40000000
+    INVALID_HANDLE_VALUE    = ctypes.c_void_p(-1).value
+    STATUS_PENDING          = 0x00000103
+    ERROR_IO_PENDING        = 997
+
+    # No FILE_FLAG_WRITE_THROUGH — without it WriteFile returns ERROR_IO_PENDING
+    # immediately so the tight loop runs at full NVMe queue depth.
+    flags = FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING
+
+    class OVERLAPPED(ctypes.Structure):
+        class _U(ctypes.Union):
+            class _S(ctypes.Structure):
+                _fields_ = [("Offset", wt.DWORD), ("OffsetHigh", wt.DWORD)]
+            _fields_ = [("s", _S), ("Pointer", ctypes.c_void_p)]
+        _fields_ = [
+            ("Internal",     ctypes.c_size_t),
+            ("InternalHigh", ctypes.c_size_t),
+            ("u",            _U),
+            ("hEvent",       wt.HANDLE),
+        ]
+
+    kernel32.WriteFile.argtypes = [
+        wt.HANDLE, ctypes.c_void_p, wt.DWORD,
+        ctypes.POINTER(wt.DWORD), ctypes.c_void_p
+    ]
+    kernel32.WriteFile.restype = wt.BOOL
+    kernel32.CreateFileW.restype = wt.HANDLE
+    kernel32.CloseHandle.argtypes = [wt.HANDLE]
+    kernel32.CloseHandle.restype = wt.BOOL
+    kernel32.CancelIoEx.argtypes = [wt.HANDLE, ctypes.c_void_p]
+    kernel32.CancelIoEx.restype = wt.BOOL
+    kernel32.CreateEventW.argtypes = [ctypes.c_void_p, wt.BOOL, wt.BOOL, ctypes.c_wchar_p]
+    kernel32.CreateEventW.restype = wt.HANDLE
+    kernel32.WaitForMultipleObjects.argtypes = [wt.DWORD, ctypes.c_void_p, wt.BOOL, wt.DWORD]
+    kernel32.WaitForMultipleObjects.restype = wt.DWORD
+
+    WAIT_OBJECT_0 = 0
+    INFINITE      = 0xFFFFFFFF
+
+    hFile = kernel32.CreateFileW(
+        tmp, GENERIC_WRITE, FILE_SHARE_READ, None,
+        CREATE_ALWAYS, flags, None
+    )
+    if hFile == INVALID_HANDLE_VALUE:
+        return
+
+    # Allocate aligned buffers
+    VirtualAlloc = kernel32.VirtualAlloc
+    VirtualAlloc.argtypes = [ctypes.c_void_p, ctypes.c_size_t, wt.DWORD, wt.DWORD]
+    VirtualAlloc.restype = ctypes.c_void_p
+    VirtualFree = kernel32.VirtualFree
+    VirtualFree.argtypes = [ctypes.c_void_p, ctypes.c_size_t, wt.DWORD]
+    VirtualFree.restype = wt.BOOL
+    MEM_COMMIT = 0x1000; MEM_RESERVE = 0x2000; MEM_RELEASE = 0x8000
+    PAGE_READWRITE = 0x04
+
+    raw = os.urandom(chunk)
+    bufs = []
+    for _ in range(queue_depth):
+        ptr = VirtualAlloc(None, chunk, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)
+        if ptr:
+            ctypes.memmove(ptr, raw, chunk)
+            bufs.append(ptr)
+
+    # No events needed — use HasOverlappedIoCompleted (Internal != STATUS_PENDING)
+    # for a tight polling loop. In a separate process (own GIL, own CPU core)
+    # this is faster than WaitForMultipleObjects which adds kernel call overhead
+    # (~0.1ms per call) that limits throughput to ~4300 MB/s.
+    ovls = [OVERLAPPED() for _ in range(queue_depth)]
+    for s in range(queue_depth):
+        ovls[s].hEvent = 0
+
+    slot_offset = [None] * queue_depth
+    next_off = 0
+    total_written = 0
+    UPDATE_INTERVAL = chunk * 8
+    _since_update = 0
+
+    def _issue_raw(slot, off):
+        ovls[slot].Internal = STATUS_PENDING
+        ovls[slot].InternalHigh = 0
+        ovls[slot].u.s.Offset = off & 0xFFFFFFFF
+        ovls[slot].u.s.OffsetHigh = (off >> 32) & 0xFFFFFFFF
+        slot_offset[slot] = off
+        written = wt.DWORD(0)
+        kernel32.WriteFile(hFile, ctypes.c_void_p(bufs[slot]),
+                           wt.DWORD(chunk), ctypes.byref(written),
+                           ctypes.byref(ovls[slot]))
+
+    # ---- Prewarm: write first queue_depth chunks from offset 0, unmeasured ---
+    # Warms the child's own file handle and NVMe write pipeline before the main
+    # process sets t0. bytes_written is not touched so the clock stays clean.
+    if not stop_flag.value:
+        pw_off = 0
+        for s in range(queue_depth):
+            if stop_flag.value:
+                break
+            _issue_raw(s, pw_off)
+            pw_off += chunk
+        # Drain all prewarm completions
+        while not stop_flag.value:
+            if all(slot_offset[s] is None or ovls[s].Internal != STATUS_PENDING
+                   for s in range(queue_depth)):
+                break
+        for s in range(queue_depth):
+            slot_offset[s] = None
+    # Signal main process: prewarm done, t0 can be set now
+    ready_flag.value = 1
+    # Reset — measured loop rewrites from offset 0
+    next_off = 0
+
+    def issue(slot):
+        nonlocal next_off
+        if next_off >= tb or stop_flag.value:
+            return False
+        off = next_off
+        next_off += chunk
+        _issue_raw(slot, off)
+        return True
+
+    for s in range(queue_depth):
+        if stop_flag.value:
+            break
+        issue(s)
+
+    while not stop_flag.value:
+        for s in range(queue_depth):
+            if slot_offset[s] is not None and ovls[s].Internal != STATUS_PENDING:
+                slot_offset[s] = None
+                total_written += chunk
+                _since_update += chunk
+                if _since_update >= UPDATE_INTERVAL:
+                    bytes_written.value = total_written
+                    _since_update = 0
+                issue(s)
+
+        if all(s is None for s in slot_offset) and next_off >= tb:
+            break
+
+    # Final update so the main process always sees the true total
+    bytes_written.value = total_written
+
+    kernel32.CancelIoEx(hFile, None)
+    kernel32.CloseHandle(hFile)
+    for ptr in bufs:
+        VirtualFree(ctypes.c_void_p(ptr), ctypes.c_size_t(0), wt.DWORD(MEM_RELEASE))
 
 
 class BenchmarkWorker(threading.Thread):
@@ -456,6 +653,137 @@ class BenchmarkWorker(threading.Thread):
     def stop(self):
         log.debug("stop() called")
         self._stop.set()
+        log.debug("stop(): _stop set")
+
+        # Capture file handle now before worker clears it
+        h = getattr(self, '_hFile', None)
+        h_valid = h is not None and h != -1 and h != 0xFFFFFFFF
+
+        # Step 1: CancelIoEx in a daemon thread — it can block on this driver
+        if h_valid:
+            def _cancel(handle):
+                try:
+                    import ctypes as _ct
+                    _ct.windll.kernel32.CancelIoEx(handle, None)
+                    log.debug("stop(): CancelIoEx done")
+                except Exception as e:
+                    log.debug(f"stop(): CancelIoEx failed: {e}")
+            threading.Thread(target=_cancel, args=(h,), daemon=True).start()
+            log.debug("stop(): CancelIoEx thread launched")
+        else:
+            log.debug(f"stop(): _hFile not available ({h})")
+
+        # Step 2: Watchdog — if worker doesn't exit in 2s, TerminateThread it
+        # and call CloseHandle ourselves. TerminateThread is dangerous in general
+        # but safe here: the worker owns no locks the GUI needs, and we're about
+        # to discard all its state anyway. This is the only way to interrupt a
+        # WriteFile that is blocking inside the NVMe driver.
+        def _watchdog():
+            self.join(timeout=10)
+            if not self.is_alive():
+                log.debug("watchdog: worker exited cleanly")
+                return
+            log.debug("watchdog: worker still alive — TerminateThread")
+            try:
+                import ctypes as _ct
+                import os as _os
+                k32 = _ct.windll.kernel32
+
+                # Step 1: TerminateThread to kill the blocked worker
+                THREAD_TERMINATE = 0x0001
+                tid = self.ident
+                hThread = k32.OpenThread(THREAD_TERMINATE, False, tid)
+                if hThread:
+                    k32.TerminateThread(hThread, 1)
+                    k32.CloseHandle(hThread)
+                    log.debug("watchdog: TerminateThread done")
+                else:
+                    log.debug("watchdog: OpenThread failed")
+
+                # Step 2: CancelIoEx in its own thread — it blocks on this driver.
+                # Step 3: CloseHandle with a 1s timeout — if it blocks, os._exit.
+                # Both run concurrently; we just wait for CloseHandle.
+                import threading as _th
+                fh = getattr(self, "_hFile", None)
+                if fh and fh != -1 and fh != 0xFFFFFFFF:
+                    self._hFile = None
+                    # Fire CancelIoEx in background — may block, don't wait for it
+                    def _cancelio(handle):
+                        k32.CancelIoEx(handle, None)
+                        log.debug("watchdog: CancelIoEx done")
+                    _th.Thread(target=_cancelio, args=(fh,), daemon=True).start()
+                    log.debug("watchdog: CancelIoEx thread launched")
+                    # CloseHandle with timeout — last resort is os._exit
+                    close_done = _th.Event()
+                    def _close(handle):
+                        k32.CloseHandle(handle)
+                        close_done.set()
+                        log.debug("watchdog: CloseHandle done")
+                    _th.Thread(target=_close, args=(fh,), daemon=True).start()
+                    if not close_done.wait(timeout=10):
+                        log.debug("watchdog: CloseHandle timed out — taskkill")
+                        import os as _os2, subprocess as _sp
+                        pid = _os2.getpid()
+                        ppid = _os2.getppid()
+                        log.debug(f"watchdog: killing pid={pid} ppid={ppid}")
+                        # taskkill /F /T kills the entire process tree
+                        for p in ([ppid] if ppid else []) + [pid]:
+                            try:
+                                _sp.Popen(
+                                    ["taskkill", "/F", "/T", "/PID", str(p)],
+                                    stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
+                                    creationflags=0x08000000  # CREATE_NO_WINDOW
+                                )
+                            except Exception:
+                                pass
+                        # Brief pause then hard exit as fallback
+                        import time as _t2
+                        _t2.sleep(0.5)
+                        import ctypes as _ct2
+                        _ct2.windll.kernel32.TerminateProcess(
+                            _ct2.windll.kernel32.GetCurrentProcess(), 1)
+                    log.debug("watchdog: done")
+                    # Worker was TerminateThread'd — clean up write process too
+                    wp2 = getattr(self, "_write_proc", None)
+                    if wp2 and wp2.is_alive():
+                        try:
+                            wp2.terminate()
+                            wp2.join(timeout=2)
+                        except Exception:
+                            pass
+                    # Delete temp file manually so it doesn't stay on disk.
+                    try:
+                        import ctypes as _ct3
+                        _ct3.windll.kernel32.DeleteFileW(getattr(self, '_tmp_path', None))
+                        log.debug("watchdog: tmp deleted")
+                    except Exception:
+                        pass
+                    # Call on_done if we have samples so graph renders,
+                    # otherwise call on_error to reset GUI to Ready.
+                    try:
+                        _s = getattr(self, '_samples_ref', None)
+                        _pk = getattr(self, '_peak_ref', 0)
+                        _av = getattr(self, '_avg_ref', 0)
+                        _el = getattr(self, '_elapsed_ref', 0)
+                        if _s:
+                            self.on_done(_s, _pk, _av, _el)
+                        else:
+                            self.on_error("stopped")
+                    except Exception:
+                        pass
+            except Exception as e:
+                log.debug(f"watchdog error: {e}")
+                import ctypes as _ct2, os as _os2
+                k = _ct2.windll.kernel32
+                ppid = _os2.getppid()
+                if ppid:
+                    ph = k.OpenProcess(1, False, ppid)
+                    if ph:
+                        k.TerminateProcess(ph, 1)
+                        k.CloseHandle(ph)
+                k.TerminateProcess(k.GetCurrentProcess(), 1)
+        threading.Thread(target=_watchdog, daemon=True).start()
+        log.debug("stop(): watchdog launched")
 
     def run(self):
         try:
@@ -470,7 +798,10 @@ class BenchmarkWorker(threading.Thread):
             self.on_error(f"Cannot read disk usage: {e}")
             return
 
-        tb = int(total * self.fill_fraction)
+        # tb = bytes to write = bytes needed to reach fill_fraction of total,
+        # minus what's already used. This matches the "Target Write" shown in UI.
+        tb = int(total * self.fill_fraction) - used
+        tb = max(0, tb)
         tb = min(tb, int(free * 0.98))
         # Round DOWN to a multiple of CHUNK so every write is exactly 1 MB
         tb = (tb // CHUNK) * CHUNK
@@ -486,6 +817,7 @@ class BenchmarkWorker(threading.Thread):
 
         ts  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         tmp = os.path.join(self.target_dir, f"_FtP_{ts}.tmp")
+        self._tmp_path = tmp
         # Remove any leftover _FtP_*.tmp files on this drive
         for stale in glob.glob(os.path.join(self.target_dir, "_FtP_*.tmp")):
             try: os.remove(stale)
@@ -496,13 +828,15 @@ class BenchmarkWorker(threading.Thread):
         else:
             self._run_fallback(tmp, tb)
 
-    # ── Windows: true OVERLAPPED Q8T1 ────────────────────────────────────
+    # ── Windows: buffered OVERLAPPED Q8T1 ───────────────────────────────
 
     def _run_windows(self, tmp, tb):
         """
         Single thread issues QUEUE_DEPTH async WriteFile calls via OVERLAPPED
-        structures, keeping exactly 8 requests in flight at all times.
-        File opened with FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH
+        structures, keeping exactly 8 requests in flight at all times (Q8T1).
+        Buffered I/O (no FILE_FLAG_NO_BUFFERING) ensures Stop/CloseHandle
+        can discard pending writes on all drivers.
+        File opened with FILE_FLAG_OVERLAPPED only (buffered overlapped I/O)
         to bypass the Windows cache — identical to CrystalDiskMark.
         """
         import ctypes
@@ -517,13 +851,19 @@ class BenchmarkWorker(threading.Thread):
         FILE_FLAG_NO_BUFFERING   = 0x20000000
         FILE_FLAG_WRITE_THROUGH  = 0x80000000
         FILE_FLAG_OVERLAPPED     = 0x40000000
+        FILE_ATTRIBUTE_TEMPORARY = 0x00000100
+        FILE_FLAG_DELETE_ON_CLOSE = 0x04000000
         INVALID_HANDLE_VALUE     = ctypes.c_void_p(-1).value
         INFINITE                 = 0xFFFFFFFF
         STATUS_PENDING           = 0x00000103
         ERROR_IO_PENDING         = 997
 
-        flags = (FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH |
-                 FILE_FLAG_OVERLAPPED)
+        # FILE_FLAG_NO_BUFFERING: bypass OS cache for direct unbuffered I/O,
+        # matching CrystalDiskMark SEQ1M behaviour. No WRITE_THROUGH — that
+        # flag combined with NO_BUFFERING commits writes synchronously even
+        # past CancelIoEx on some drivers.
+        # No FILE_FLAG_WRITE_THROUGH — WriteFile returns ERROR_IO_PENDING immediately.
+        flags = FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING
 
         # ── OVERLAPPED structure ─────────────────────────────────────────
         class OVERLAPPED(ctypes.Structure):
@@ -587,6 +927,8 @@ class BenchmarkWorker(threading.Thread):
             self.on_error(f"CreateFile failed (error {err}). "
                           f"Try running as Administrator.")
             return
+        self._hFile = hFile  # stored for CancelIo in stop()
+
         # ── Allocate sector-aligned 1 MB buffers (one per queue slot) ───
         # ctypes.create_string_buffer is not guaranteed aligned;
         # allocate via VirtualAlloc for guaranteed 4 KB alignment.
@@ -656,11 +998,26 @@ class BenchmarkWorker(threading.Thread):
         def _collect(slot, block=False):
             """Wait for slot to complete; return bytes written or 0."""
             nonlocal bytes_confirmed, interval_bytes
-            timeout = INFINITE if block else 0
+            ovl = ovls[slot]
+            if not block:
+                # HasOverlappedIoCompleted: pure userspace check, no kernel call.
+                if ovl.Internal == STATUS_PENDING:
+                    return 0
+                # I/O complete. Count exactly CHUNK bytes — we issued CHUNK per slot
+                # and slot_offset[slot]=None (set below) prevents double-counting.
+                # Do NOT use InternalHigh or GetOverlappedResult: this driver splits
+                # each 1 MB write into ~3 sub-completions, so both return ~333 KB
+                # instead of 1 MB, causing a 3x speed undercount.
+                n = CHUNK
+                bytes_confirmed += n
+                interval_bytes  += n
+                slot_offset[slot] = None
+                return n
+            # block=True path (drain at end of normal run): kernel call is fine here
             transferred = wt.DWORD(0)
             ok = kernel32.GetOverlappedResult(
-                hFile, ctypes.byref(ovls[slot]),
-                ctypes.byref(transferred), wt.BOOL(block)
+                hFile, ctypes.byref(ovl),
+                ctypes.byref(transferred), wt.BOOL(True)
             )
             if ok:
                 n = transferred.value
@@ -674,94 +1031,85 @@ class BenchmarkWorker(threading.Thread):
         next_offset     = 0
         bytes_confirmed = 0
         interval_bytes  = 0
+        peak            = 0.0
         t0              = time.perf_counter()
         t_interval      = t0
 
         try:
-            # ── Pre-warm ──────────────────────────────────────────────────────
-            pw_start = max(0, tb - CHUNK * QUEUE_DEPTH)
-            prewarm_offset = [pw_start]
-            def _issue_prewarm(slot):
-                if prewarm_offset[0] >= tb:
-                    return False
-                off = prewarm_offset[0]
-                prewarm_offset[0] += CHUNK
-                kernel32.ResetEvent(events[slot])
-                ovls[slot].u.s.Offset     = off & 0xFFFFFFFF
-                ovls[slot].u.s.OffsetHigh = (off >> 32) & 0xFFFFFFFF
-                written = wt.DWORD(0)
-                kernel32.WriteFile(hFile, ctypes.c_void_p(bufs[slot]),
-                                   wt.DWORD(CHUNK), ctypes.byref(written),
-                                   ctypes.byref(ovls[slot]))
-                slot_offset[slot] = off
-                return True
-
-            for s in range(QUEUE_DEPTH):
-                _issue_prewarm(s)
-            # Wait for all prewarm writes to complete, checking _stop periodically
-            while any(slot_offset[s] is not None for s in range(QUEUE_DEPTH)):
-                if self._stop.is_set():
-                    break  # finally will CloseHandle and cancel pending I/O
-                handles = [events[s] for s in range(QUEUE_DEPTH) if slot_offset[s] is not None]
-                n = len(handles)
-                harr = (wt.HANDLE * n)(*handles)
-                kernel32.WaitForMultipleObjects(wt.DWORD(n), harr, wt.BOOL(False), wt.DWORD(50))
-                for s in range(QUEUE_DEPTH):
-                    if slot_offset[s] is not None:
-                        _collect(s, block=False)
-
             if self._stop.is_set():
-                pass  # fall through to finally, then post-finally will call on_done with 0 samples
+                pass  # fall through to finally
             else:
-                # Reset slot state for main test
-                slot_offset[:] = [None] * QUEUE_DEPTH
+
+                # ── Multiprocess write loop ─────────────────────────────────
+                # Spawn a separate process for the hot write loop. The child
+                # process has its own GIL and runs WriteFile in a tight loop
+                # without any Python overhead competing with I/O. Speed is
+                # measured by reading bytes_written (shared Value) every 0.5s.
+
+                import multiprocessing as _mp
+                _mp.freeze_support()
+
+                stop_flag    = _mp.Value('i', 0)
+                bytes_written = _mp.Value('q', 0)  # signed 64-bit
+                ready_flag    = _mp.Value('i', 0)  # set by child after prewarm
+
+                wp = _mp.Process(
+                    target=_write_process,
+                    args=(tmp, tb, CHUNK, QUEUE_DEPTH, stop_flag, bytes_written, ready_flag),
+                    daemon=True
+                )
+                wp.start()
+                self._write_proc = wp  # stored for watchdog
+
+                # Close our own hFile — child process opened its own handle
+                kernel32.CloseHandle(hFile)
+                self._hFile = None  # prevent finally from double-closing
+
+                # Wait for child to finish prewarm before starting the clock.
+                # 15s timeout guards against child startup failure.
+                _pw_deadline = time.perf_counter() + 15.0
+                while not ready_flag.value and not self._stop.is_set():
+                    if time.perf_counter() > _pw_deadline:
+                        log.debug("ready_flag timeout — starting clock cold")
+                        break
+                    time.sleep(0.005)
                 t0         = time.perf_counter()
                 t_interval = t0
+                log.debug(f"ready_flag={ready_flag.value}, t0 set")
 
-                # Fill all queue slots initially
-                for s in range(QUEUE_DEPTH):
-                    _issue(s)
+                bw_prev = 0
 
-            while not self._stop.is_set():
-                # Wait for ANY slot to finish (WaitForMultipleObjects)
-                handles = (wt.HANDLE * QUEUE_DEPTH)(*events)
-                WAIT_OBJECT_0 = 0
-                idx = kernel32.WaitForMultipleObjects(
-                    wt.DWORD(QUEUE_DEPTH), handles, wt.BOOL(False), wt.DWORD(50)
-                )
+                while not self._stop.is_set():
+                    time.sleep(MEASURE_INTERVAL)
 
-                now = time.perf_counter()
+                    bw_now  = bytes_written.value
+                    delta   = bw_now - bw_prev
+                    bw_prev = bw_now
+                    bytes_confirmed = bw_now
 
-                # Collect all completed slots
-                for s in range(QUEUE_DEPTH):
-                    if slot_offset[s] is not None:
-                        _collect(s, block=False)
-                        if slot_offset[s] is None:
-                            # slot finished — reissue if space remains
-                            _issue(s)
-
-                # Speed sample
-                if now - t_interval >= MEASURE_INTERVAL:
+                    now     = time.perf_counter()
                     elapsed = now - t0
-                    dt = now - t_interval
-                    mb_s = (interval_bytes / dt) / (1024 * 1024) if dt > 0 else 0
+                    dt      = now - t_interval
+                    mb_s    = (delta / dt) / (1024 * 1024) if dt > 0 and delta > 0 else 0
                     if mb_s > 0:
                         samples.append((elapsed, mb_s, bytes_confirmed))
+                        peak = max(peak, mb_s)
+                        self._samples_ref = samples[:]
+                        self._peak_ref    = peak
+                        self._avg_ref     = sum(s2[1] for s2 in samples) / len(samples)
+                        self._elapsed_ref = elapsed
                         self.on_sample(elapsed, mb_s, bytes_confirmed, tb)
                         self.on_progress(bytes_confirmed, tb, mb_s)
-                    t_interval     = now
-                    interval_bytes = 0
+                    t_interval = now
 
-                # All slots idle and no more data to write → done
-                if all(s is None for s in slot_offset) and next_offset >= tb:
-                    break
+                    if not wp.is_alive():
+                        break
 
-            # Drain any remaining in-flight slots only if we finished normally.
-            # On stop, skip — CloseHandle in finally will cancel pending I/O.
-            if not self._stop.is_set():
-                for s in range(QUEUE_DEPTH):
-                    if slot_offset[s] is not None:
-                        _collect(s, block=True)
+                # Signal child to stop and wait briefly
+                stop_flag.value = 1
+                wp.join(timeout=5)
+                if wp.is_alive():
+                    wp.terminate()
 
         except Exception as e:
             log.debug(f"main loop exception: {e}")
@@ -769,9 +1117,10 @@ class BenchmarkWorker(threading.Thread):
         finally:
             log.debug("finally block reached")
             if self._stop.is_set():
-                kernel32.CancelIo(hFile)
-                log.debug("finally: CancelIo done")
+                kernel32.CancelIoEx(hFile, None)
+                log.debug("finally: CancelIoEx done")
             kernel32.CloseHandle(hFile)
+            self._hFile = None
             log.debug("finally: CloseHandle done")
             for ev in events:
                 kernel32.CloseHandle(ev)
@@ -780,7 +1129,8 @@ class BenchmarkWorker(threading.Thread):
                 VirtualFree(ctypes.c_void_p(ptr), ctypes.c_size_t(0), wt.DWORD(MEM_RELEASE))
             log.debug("finally: bufs freed")
             try:
-                os.remove(tmp)
+                # Use DeleteFileW directly to permanently delete without going to Recycle Bin
+                ctypes.windll.kernel32.DeleteFileW(tmp)
             except Exception:
                 pass
             log.debug("finally: tmp removed")
@@ -796,6 +1146,10 @@ class BenchmarkWorker(threading.Thread):
         avg  = sum(s[1] for s in samples) / len(samples)
         log.debug(f"calling on_done: peak={peak:.1f} avg={avg:.1f} elapsed={total_elapsed:.1f}")
         self.on_progress(bytes_confirmed, tb, avg)
+        self._samples_ref = samples
+        self._peak_ref = peak
+        self._avg_ref = avg
+        self._elapsed_ref = total_elapsed
         self.on_done(samples, peak, avg, total_elapsed)
         log.debug("on_done returned")
 
@@ -847,6 +1201,10 @@ class BenchmarkWorker(threading.Thread):
         total_elapsed = time.perf_counter() - t0
         peak = max(s[1] for s in samples)
         avg  = sum(s[1] for s in samples) / len(samples)
+        self._samples_ref = samples
+        self._peak_ref = peak
+        self._avg_ref = avg
+        self._elapsed_ref = total_elapsed
         self.on_done(samples, peak, avg, total_elapsed)
 
 
@@ -1031,6 +1389,7 @@ class FillThePane(tk.Tk):
         self._drives       = []
         self._target_bytes = 0
         self._drive_total  = 0
+        self._drive_used   = 0  # bytes already on drive before test started
         self._vline        = None
         self._hover_ann    = None
         self._notes_var    = tk.StringVar(value="")
@@ -1047,6 +1406,21 @@ class FillThePane(tk.Tk):
         self._refresh_drives()
         self.after(500, self._center_window)
         self.bind("<Expose>", lambda e: self._canvas.draw_idle() if hasattr(self, "_canvas") else None)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _on_close(self):
+        if self._worker and self._worker.is_alive():
+            self._worker.stop()
+        self.destroy()
+        import ctypes as _ct, os as _os2
+        k = _ct.windll.kernel32
+        ppid = _os2.getppid()
+        if ppid:
+            ph = k.OpenProcess(1, False, ppid)
+            if ph:
+                k.TerminateProcess(ph, 0)
+                k.CloseHandle(ph)
+        k.TerminateProcess(k.GetCurrentProcess(), 0)
 
     def _(self, key):
         return Tr(self._lang, key)
@@ -1645,6 +2019,7 @@ class FillThePane(tk.Tk):
             return
         _, mp, total, free, _ = self._drives[idx]
         self._drive_total = total
+        self._drive_used  = total - free
         fill   = self._effective_pct() / 100.0
         target = min(int(total * fill), int(free * 0.98))
         if target < CHUNK:
@@ -1736,10 +2111,13 @@ class FillThePane(tk.Tk):
         )
 
     def _x_val(self, bytes_written):
+        # Offset by used bytes so graph position reflects actual drive location
+        offset = self._drive_used if self._drive_used > 0 else 0
+        adjusted = bytes_written + offset
         if self._drive_total <= 0:
-            return _bytes_to_gb(bytes_written)
+            return _bytes_to_gb(adjusted)
         total_gb = _bytes_to_gb(self._drive_total)
-        return _bytes_to_gb(bytes_written) if total_gb >= 1 else bytes_written / (1024**2)
+        return _bytes_to_gb(adjusted) if total_gb >= 1 else adjusted / (1024**2)
 
     def _x_label(self):
         if self._drive_total <= 0:
@@ -1752,6 +2130,19 @@ class FillThePane(tk.Tk):
             return None
         total_gb = _bytes_to_gb(self._drive_total)
         return total_gb if total_gb >= 1 else self._drive_total / (1024**2)
+
+    def _draw_used_block(self, ax):
+        """Draw a pink shaded block from 0 to used-space position on the x axis."""
+        if self._drive_used <= 0 or self._drive_total <= 0:
+            return
+        total_gb = _bytes_to_gb(self._drive_total)
+        if total_gb >= 1:
+            x_used = _bytes_to_gb(self._drive_used)
+        else:
+            x_used = self._drive_used / (1024 ** 2)
+        ax.axvspan(0, x_used, color="#e05555", alpha=0.13, zorder=0)
+        ax.axvline(x=x_used, color="#e05555", linewidth=1.0,
+                   linestyle="--", alpha=0.5, zorder=1)
 
     def _full_redraw(self):
         """Full axes redraw — used on reset, theme change, and load. Not called during live test."""
@@ -1773,6 +2164,7 @@ class FillThePane(tk.Tk):
             self._plot_ax2.set_xlabel("% of Total Capacity", color=th("SUBTEXT"),
                                        fontsize=8, fontfamily=FN)
             self._plot_ax2.tick_params(colors=th("SUBTEXT"), labelsize=8)
+        self._draw_used_block(ax)
         self._fig.tight_layout(pad=1.5)
         self._canvas.draw()
 
@@ -1798,6 +2190,7 @@ class FillThePane(tk.Tk):
                 self._plot_ax2.set_xlabel(self._("pct_of_capacity"), color=th("SUBTEXT"),
                                            fontsize=8, fontfamily=FN)
                 self._plot_ax2.tick_params(colors=th("SUBTEXT"), labelsize=8)
+            self._draw_used_block(ax)
             self._plot_fill, = [ax.fill_between(xs, ys, alpha=0.15, color=th("ACCENT"))]
             self._plot_line, = ax.plot(xs, ys, color=th("ACCENT"), linewidth=1.8,
                                         marker="o", markersize=3.5,
@@ -2081,7 +2474,7 @@ class FillThePane(tk.Tk):
         tb   = self._target_bytes if self._target_bytes > 0 else 1
         rows = [(i+1, s[0], s[1], s[2], s[2]/tb*100)
                 for i, s in enumerate(self._samples)]
-        hdrs = ["Sample", "Elapsed (s)", "Write Speed (MB/s)", "Bytes Written", "Capacity %", "Drive Total Bytes", "Notes"]
+        hdrs = ["Sample", "Elapsed (s)", "Write Speed (MB/s)", "Bytes Written", "Capacity %", "Drive Total Bytes", "Drive Used Bytes", "Notes"]
 
         dt    = self._drive_total
         notes = self._notes_var.get()
@@ -2092,7 +2485,7 @@ class FillThePane(tk.Tk):
                 w.writerow(hdrs)
                 for row in rows:
                     w.writerow([row[0], f"{row[1]:.3f}", f"{row[2]:.2f}",
-                                row[3], f"{row[4]:.2f}", dt, notes])
+                                row[3], f"{row[4]:.2f}", dt, self._drive_used, notes])
         self._set_save_msg(path)
 
     def _do_load_data(self):
@@ -2107,6 +2500,7 @@ class FillThePane(tk.Tk):
 
         samples = []
         drive_total_loaded = 0
+        drive_used_loaded  = 0
         notes_loaded = ""
         try:
             with open(path, newline="", encoding="utf-8-sig") as f:
@@ -2119,6 +2513,11 @@ class FillThePane(tk.Tk):
                     if not drive_total_loaded:
                         try:
                             drive_total_loaded = int(float(row.get("Drive Total Bytes", 0)))
+                        except Exception:
+                            pass
+                    if not drive_used_loaded:
+                        try:
+                            drive_used_loaded = int(float(row.get("Drive Used Bytes", 0)))
                         except Exception:
                             pass
                     if not notes_loaded:
@@ -2135,6 +2534,7 @@ class FillThePane(tk.Tk):
         self._target_bytes = max(s[2] for s in samples)
         # Use saved drive total for correct x-axis scaling
         self._drive_total  = drive_total_loaded if drive_total_loaded > 0 else self._target_bytes
+        self._drive_used   = drive_used_loaded
         # Reset plot objects so _update_graph does a clean full redraw
         self._plot_line = None
         self._plot_fill = None
@@ -2337,5 +2737,7 @@ class FillThePane(tk.Tk):
 # ═══════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    import multiprocessing as _mp_main
+    _mp_main.freeze_support()
     app = FillThePane()
     app.mainloop()
