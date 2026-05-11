@@ -65,7 +65,7 @@ This produces `ftp_loop.dll` in the project root. The app works without it (fall
 pyinstaller fill_the_pane.spec
 ```
 
-Or double-click `build.bat` — it builds, copies the exe to `latest\`, and launches it automatically.
+Or double-click `build.bat` — it builds, copies the source to `latest\`, and launches the exe automatically.
 
 The finished executable will be in `dist\`. Copy it anywhere — no installation needed.
 
