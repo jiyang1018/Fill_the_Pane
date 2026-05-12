@@ -21,11 +21,14 @@
 !assets/
 !assets/**
 
+# Allow latest folder (current source for CI build)
+!latest/
+!latest/**
+
 # Explicitly exclude build artifacts that may already be tracked
 build/
 code/
 dist/
 *.dll
 *.log
-*.txt
 *.exe
