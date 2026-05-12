@@ -17,9 +17,9 @@
 !.github/
 !.github/**
 
-# Allow latest folder and its contents (source files only)
-!latest/
-!latest/**
+# Allow assets folder (sample result media for README)
+!assets/
+!assets/**
 
 # Explicitly exclude build artifacts that may already be tracked
 build/
