@@ -4,11 +4,11 @@ A Windows tool that stress-tests drive write performance over time, revealing SL
 
 ## Sample Result
 
-![Fill the Pane sample graph](assets/sample_result.png)
+![Fill the Pane sample graph](assets/Sample%20Result.png)
 
-![Fill the Pane animation](assets/sample_result.gif)
+![Fill the Pane animation](assets/Sample%20Result.gif)
 
-[View interactive infographic](assets/sample_result.html)
+[View interactive infographic](assets/Sample%20Result.html)
 
 ## What Fill the Pane does
 
