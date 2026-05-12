@@ -85,7 +85,7 @@ python latest\fill_the_pane_v*.py
 
 ![Fill the Pane animation](assets/Sample%20Result.gif)
 
-[View interactive infographic](assets/Sample%20Result.html)
+[View interactive infographic](https://htmlpreview.github.io/?https://github.com/jiyang1018/Fill_the_Pane/blob/main/assets/Sample%20Result.html)
 
 ## Notes
 
