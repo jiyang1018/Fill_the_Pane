@@ -6,7 +6,7 @@
  *     thread exactly when a completion arrives -- zero wasted spin cycles.
  *   - Deeper prewarm: 256 MB instead of 8 MB.
  *   - XOR-shift buffer fill replaces rand() -- much faster.
- *   - Explicit _WriteBarrier on bytes_written updates.
+ *   - Reduced shared memory update frequency to lower lock contention.
  *
  * Build (MSVC):
  *   cl /O2 /LD /EHsc ftp_loop.cpp /Fe:ftp_loop.dll
@@ -137,7 +137,6 @@ __declspec(dllexport) int ftp_write_loop(
         since_update  += chunk;
 
         if (since_update >= UPDATE_INTERVAL) {
-            _WriteBarrier();
             *bytes_written = total_written;
             since_update = 0;
         }
