@@ -2,14 +2,6 @@
 
 A Windows tool that stress-tests drive write performance over time, revealing SLC cache size, cache exhaustion speed, and sustained post-cache write speed.
 
-## Sample Result
-
-![Fill the Pane sample graph](assets/Sample%20Result.png)
-
-![Fill the Pane animation](assets/Sample%20Result.gif)
-
-[View interactive infographic](assets/Sample%20Result.html)
-
 ## What Fill the Pane does
 
 Fill the Pane writes sequentially to a drive until it reaches a target fill percentage, sampling write speed every 500 ms and plotting the full time-series graph live. This shows you three things CrystalDiskMark was not designed to show:
@@ -86,6 +78,14 @@ The finished executable will be in `dist\`. Copy it anywhere — no installation
 ```
 python latest\fill_the_pane_v*.py
 ```
+
+## Sample Result
+
+![Fill the Pane sample graph](assets/Sample%20Result.png)
+
+![Fill the Pane animation](assets/Sample%20Result.gif)
+
+[View interactive infographic](assets/Sample%20Result.html)
 
 ## Notes
 
