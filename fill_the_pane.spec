@@ -9,7 +9,7 @@
 block_cipher = None
 
 a = Analysis(
-    ['latest/fill_the_pane_v0.6.02.py'],
+    ['latest/fill_the_pane_v0.6.04.py'],
     pathex=[],
     binaries=[],
     datas=[('ftp_loop.dll', '.')],  # native C++ write loop; falls back to Python if absent
@@ -61,7 +61,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Fill the Pane v0.6.02',
+    name='Fill the Pane v0.6.04',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

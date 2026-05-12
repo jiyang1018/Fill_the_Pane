@@ -1,54 +1,40 @@
-## Fill the Pane v0.6.02 -- 2026-05-11
+## Fill the Pane v0.6.04 -- 2026-05-11
 
-- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
-- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
-- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
-
----
-
-## Fill the Pane v0.6.02 -- 2026-05-11
-
-- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
-- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
-- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
-
----
-
-## Fill the Pane v0.6.02 -- 2026-05-11
-
-- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
-- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
-- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
-
----
-
-## Fill the Pane v0.6.02 -- 2026-05-11
-
-- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
-- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
-- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
-
----
-
-## Fill the Pane v0.6.02 -- 2026-05-11
-
-- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
-- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
-- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
-
----
-
-## Fill the Pane v0.6.02 -- 2026-05-11
-
-- Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began
-- X-axis values offset by pre-existing used bytes so each sample plots at its true position on the full drive
-- `Drive Used Bytes` column added to CSV export and read back on load — loaded CSVs with this column show the used-space block correctly
+- Min speed marker added to graph, PNG, GIF, and HTML infographic — annotates the lowest sample point
+- Average speed shown as a dashed horizontal line across the graph in all outputs, with callout label placed above the line after the last sample point
+- Min MB/s added to Results panel and HTML infographic stats
+- Y-axis now starts near the lowest data value instead of 0
+- Peak renamed to Max throughout — graph annotation, Results panel, status bar, HTML infographic
+- HTML infographic now shows the pre-existing used space as a pink block with a dashed vertical line, matching the in-app graph
+- "peak" and "peak_annotation" i18n keys renamed to "max_speed" and "max_annotation" to prevent languages.json from overriding the Max label
+- GIF option removed from Save Graph Image — PNG and JPG only
+- Save Animation renamed to Save Graph Animation
+- Notes text in PNG and GIF exports moved to top-left, aligned with the graph title row
+- Window height increased from 885px to 905px to accommodate the new Min results row
+- Bottom padding restored on Infographic button after height adjustment
 
 ---
 
 # Fill the Pane — Changelog
 
 ---
+
+**v0.6.04**
+- Min speed marker added to graph, PNG, GIF, and HTML infographic — annotates the lowest sample point
+- Average speed shown as a dashed horizontal line across the graph in all outputs, with callout label placed above the line after the last sample point
+- Min MB/s added to Results panel and HTML infographic stats
+- Y-axis now starts near the lowest data value instead of 0
+- Peak renamed to Max throughout — graph annotation, Results panel, status bar, HTML infographic
+- HTML infographic now shows the pre-existing used space as a pink block with a dashed vertical line, matching the in-app graph
+- "peak" and "peak_annotation" i18n keys renamed to "max_speed" and "max_annotation" to prevent languages.json from overriding the Max label
+- GIF option removed from Save Graph Image — PNG and JPG only
+- Save Animation renamed to Save Graph Animation
+- Notes text in PNG and GIF exports moved to top-left, aligned with the graph title row
+- Window height increased from 885px to 905px to accommodate the new Min results row
+- Bottom padding restored on Infographic button after height adjustment
+
+**v0.6.03**
+- HTML infographic now shows the pre-existing used space as a pink block with a dashed vertical line, matching the in-app graph
 
 **v0.6.02**
 - Graph now shows previously used drive space as a pink/red shaded block from x=0 to the test start position, with a dashed vertical line marking where writing began

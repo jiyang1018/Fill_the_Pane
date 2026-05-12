@@ -2,6 +2,14 @@
 
 A Windows tool that stress-tests drive write performance over time, revealing SLC cache size, cache exhaustion speed, and sustained post-cache write speed.
 
+## Sample Result
+
+![Fill the Pane sample graph](assets/sample_result.png)
+
+![Fill the Pane animation](assets/sample_result.gif)
+
+[View interactive infographic](assets/sample_result.html)
+
 ## What Fill the Pane does
 
 Fill the Pane writes sequentially to a drive until it reaches a target fill percentage, sampling write speed every 500 ms and plotting the full time-series graph live. This shows you three things CrystalDiskMark was not designed to show:
@@ -25,16 +33,16 @@ FTP uses the same SEQ1M Q8T1 I/O pattern (1 MB sequential writes, queue depth 8,
 - Configurable write target — slider from 0–100% of free space, or manual GB entry
 - Live write speed graph updated every 500 ms
 - Interactive crosshair tooltip — GB written, % capacity, elapsed time, speed at cursor
-- Peak MB/s annotation on graph
-- Peak, average MB/s and duration in Results panel
+- Max, average, and min MB/s annotations on graph with average dashed line
+- Max, average, min MB/s and duration in Results panel
 - Dark and light theme
 - Multi-language support (English, German, French, Spanish, Japanese, Simplified Chinese, Korean)
 - Stop test instantly at any time
-- Export graph as PNG image
+- Export graph as PNG or JPG image
 - Export animated GIF of test progression
 - Export samples as CSV
 - Load previously saved CSV for review
-- Infographic for Web — embeddable HTML chart
+- Infographic for Web — embeddable interactive HTML chart
 - Notes field on graph panel
 - Debug log toggle (off by default)
 - Random data writes to prevent hardware compression from skewing results
@@ -59,13 +67,17 @@ build_dll.bat
 
 This produces `ftp_loop.dll` in the project root. The app works without it (falls back to the Python loop) but runs faster with it.
 
-### Step 2 — Build the exe
+### Step 2 — Place source in `latest\`
+
+The build script reads the source file directly from `latest\`. Place the current `fill_the_pane_vX.X.XX.py` there before building. `build.bat` will copy it to `code\` for history and clean up any older versions from `latest\` automatically.
+
+### Step 3 — Build the exe
 
 ```
 pyinstaller fill_the_pane.spec
 ```
 
-Or double-click `build.bat` — it builds, copies the source to `latest\`, and launches the exe automatically.
+Or double-click `build.bat` — it verifies the source is in `latest\`, copies it to `code\`, builds the exe, and launches it automatically.
 
 The finished executable will be in `dist\`. Copy it anywhere — no installation needed.
 

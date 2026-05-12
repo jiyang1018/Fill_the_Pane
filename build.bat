@@ -9,14 +9,22 @@ set VERSION=%EXE_NAME:Fill the Pane v=%
 set VERSION=%VERSION:.exe=%
 set PY_FILE=fill_the_pane_v%VERSION%.py
 
-:: Create latest\ folder if it doesn't exist
-if not exist latest mkdir latest
+:: Verify source exists in latest\
+if not exist "latest\%PY_FILE%" (
+    echo ERROR: latest\%PY_FILE% not found.
+    echo Place the source file in latest\ before building.
+    pause
+    exit /b 1
+)
 
-:: Clear latest\ folder
-del /q "latest\*" 2>nul
+:: Copy current version from latest\ to code\ for history
+if not exist code mkdir code
+copy "latest\%PY_FILE%" "code\%PY_FILE%" >nul
 
-:: Copy latest .py from code\ to latest\
-copy "code\%PY_FILE%" "latest\%PY_FILE%"
+:: Clear latest\ and keep only the current version
+for %%f in (latest\*.py) do (
+    if /i not "%%f"=="latest\%PY_FILE%" del "%%f"
+)
 
 :: Run PyInstaller
 python -m PyInstaller fill_the_pane.spec --noconfirm
